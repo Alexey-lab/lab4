@@ -1,0 +1,94 @@
+#define _CRT_NONSTDC_NO_WARNINGS
+
+#include <stdio.h>
+#include <conio.h>
+#include <string.h>
+#include <memory.h>
+
+void main(void)
+{
+    char temp[50];
+    int number = 0;
+    char* result;
+    char digit;
+
+    char source[6];
+    printf("Enter your number in the 3 number system: ");
+    gets_s(source, 6);
+
+
+    // 2 вариант, перевод числа из 3 в 2 систему счисления
+
+    __asm
+    {
+        lea eax, source;
+        mov result, eax;
+
+        // Перевод числа из 3 в 10
+    ToDecimal:
+        // Проверка условия (*result != 0)
+        mov eax, result;
+        xor ecx, ecx; // Очистка ecx
+        mov cl, byte ptr[eax]; // Занесение цифры из строки в регистр cl
+        test cl, cl;
+        je ToDecimalEnd; // Если ecx == 0, то переход на LabelEnd1
+
+        // Перевод строчной цифры в обычную
+        mov ebx, 41h
+            cmp ecx, ebx
+            jge LetterToInt
+            jne DigitToInt
+
+            LetterToInt :
+        sub ecx, 0x37;
+        jmp ToIntEnd;
+
+    DigitToInt:
+        sub ecx, 0x30;
+        jmp ToIntEnd;
+
+    ToIntEnd:
+        mov digit, cl;
+        // Формирование самого числа из строки (перевод в 10 систему)
+        mov eax, number; // Занесение числа в 10 системе в eax
+        xor ebx, ebx; // Очистка ebx
+        mov bx, 3; // Занесение множителя для перевода из 3 системы счисления
+        mul bx; // Умножение eax на bx (number * 3)
+        xor ebx, ebx; // Очистка ebx
+        mov bl, digit; // Занесение символьной записи чисте в bl
+        add eax, ebx;  // Сумма полученного произведения и нашей цифры (number * 3 + digit)
+        mov number, eax; // Запись полученной суммы в eax
+        inc result; // Смещение к следующей цифре в строке
+        jmp ToDecimal;
+    ToDecimalEnd:
+        // Перевод полученного десятичного числа в строку
+        lea eax, temp;
+        add eax, 49;
+        mov result, eax;
+        mov byte ptr[eax], 0;
+
+        // Перевод числа из 10 в 2
+    ToBinary:
+        // Проверка условия окончания цикла (number > 0)
+        cmp number, 0;
+        jle ToBinaryEnd;
+        mov eax, number;
+        xor edx, edx;
+        mov ebx, 2;  // Помещаем 2 в ebx для перевода числа в двоичную систему
+        div ebx;  // Делим eax на ebx, частное в EAX, остаток в EDX
+        mov number, eax;
+
+        // Перевод цифры в строчную цифру
+        add edx, 0x30;
+        mov digit, dl;
+        // Копирование символа цифры в строку
+        dec result;
+        mov eax, result;
+        mov byte ptr[eax], dl;
+        // Переход к следующей цифре
+        jmp ToBinary;
+    ToBinaryEnd:
+    }
+
+    printf("Your Binary Result = %s\n", result);
+}
